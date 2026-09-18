@@ -1,0 +1,1051 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SVLS · Smart Visualize Learning System</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #f5f6fb;
+      --bg2: #eef0f9;
+      --card: #ffffff;
+      --ink: #161a23;
+      --mute: #6b7280;
+      --line: #e7e9f2;
+      --a1: #4f46e5;
+      --a2: #14b8a6;
+      --grad: linear-gradient(135deg, #4f46e5, #14b8a6);
+      --shadow: 0 1px 2px rgba(16,24,40,.04), 0 6px 20px -8px rgba(16,24,40,.10);
+      --r: 16px;
+      --rs: 10px;
+      --sidebg: #ffffff;
+      --good: #16a34a;
+      --warn: #d97706;
+      --bad: #dc2626;
+    }
+    :root[data-theme="dark"] {
+      --bg: #0d0f14;
+      --bg2: #11141b;
+      --card: #161922;
+      --ink: #eef0f6;
+      --mute: #9aa3b5;
+      --line: #262b38;
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 10px 30px -12px rgba(0,0,0,.55);
+      --sidebg: #12141c;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--ink);
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      line-height: 1.55;
+      -webkit-font-smoothing: antialiased;
+      transition: background .2s, color .2s;
+    }
+    a { color: inherit; text-decoration: none; }
+    .ic { width: 18px; height: 18px; flex: none; display: inline-block; vertical-align: middle; }
+
+    .shell { display: grid; grid-template-columns: 236px 1fr; min-height: 100vh; }
+    .side {
+      background: var(--sidebg);
+      border-right: 1px solid var(--line);
+      padding: 18px 14px;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      z-index: 10;
+    }
+    .sbrand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+      font-size: 15.5px;
+      padding: 6px 8px 22px;
+      letter-spacing: -.01em;
+    }
+    .mark {
+      width: 30px;
+      height: 30px;
+      border-radius: 9px;
+      background: var(--grad);
+      color: #fff;
+      display: grid;
+      place-items: center;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .navitem {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      padding: 9px 11px;
+      border-radius: 10px;
+      font-size: 13.5px;
+      color: var(--mute);
+      margin-bottom: 2px;
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.15s ease;
+    }
+    .navitem:hover { background: var(--bg2); color: var(--ink); }
+    .navitem.active { background: var(--bg2); color: var(--a1); font-weight: 600; }
+    .navitem.active .ic { color: var(--a1); }
+    .sidefoot { margin-top: auto; padding-top: 14px; border-top: 1px solid var(--line); }
+    .userrow { display: flex; align-items: center; gap: 9px; padding: 8px; }
+    .uav { width: 28px; height: 28px; border-radius: 50%; background: var(--grad); color: #fff; display: grid; place-items: center; font-size: 11px; font-weight: 700; }
+    .uname { font-size: 13px; font-weight: 600; }
+    .uemail { font-size: 11px; color: var(--mute); }
+    .logout {
+      display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--mute);
+      padding: 8px; cursor: pointer; background: none; border: 0; font-family: inherit; width: 100%;
+    }
+    .logout:hover { color: var(--ink); }
+
+    .main { padding: 24px 34px 60px; max-width: 1040px; }
+    .topbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 26px; gap: 16px; }
+    .crumb { font-size: 12px; color: var(--mute); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 6px; }
+    h1 { font-size: 25px; letter-spacing: -.02em; margin: 0; font-weight: 700; }
+    .lede { font-size: 14px; color: var(--mute); margin: 6px 0 0; max-width: 56ch; }
+    .tools { display: flex; align-items: center; gap: 10px; }
+    .toggle {
+      width: 40px; height: 24px; border-radius: 999px; background: var(--bg2);
+      border: 1px solid var(--line); position: relative; cursor: pointer; flex: none;
+    }
+    .toggle i {
+      position: absolute; top: 2px; left: 2px; width: 18px; height: 18px;
+      border-radius: 50%; background: var(--grad); transition: transform .18s;
+    }
+    .toggle.on i { transform: translateX(16px); }
+
+    .btn {
+      font: inherit; font-size: 13.5px; font-weight: 600; border: 0; border-radius: 10px;
+      padding: 10px 18px; background: var(--grad); color: #fff; cursor: pointer;
+      display: inline-flex; align-items: center; gap: 7px; box-shadow: var(--shadow);
+      transition: opacity 0.15s ease, transform 0.1s ease;
+    }
+    .btn:active { transform: scale(0.98); }
+    .btn.ghost { background: var(--card); color: var(--ink); border: 1px solid var(--line); box-shadow: none; }
+    .btn.ghost:hover { background: var(--bg2); }
+    .btn.sm { font-size: 12px; padding: 7px 13px; }
+
+    .card { background: var(--card); border: 1px solid var(--line); border-radius: var(--r); padding: 20px; box-shadow: var(--shadow); }
+    .card.pad-sm { padding: 16px; }
+    .eyebrow { font-size: 11px; color: var(--mute); text-transform: uppercase; letter-spacing: .06em; margin: 0 0 12px; font-weight: 600; }
+    .section { margin-bottom: 26px; }
+    .row { display: flex; gap: 12px; flex-wrap: wrap; }
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+    .grid4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+    .muted { color: var(--mute); }
+
+    .stat .n { font-size: 26px; font-weight: 700; letter-spacing: -.02em; }
+    .stat .l { font-size: 12px; color: var(--mute); margin-top: 2px; }
+    .stat .d { font-size: 11.5px; margin-top: 6px; font-weight: 600; }
+    .stat .d.up { color: var(--good); }
+    .stat .d.down { color: var(--bad); }
+
+    .bar { height: 6px; border-radius: 999px; background: var(--bg2); overflow: hidden; margin-top: 6px; }
+    .bar i { display: block; height: 100%; background: var(--grad); transition: width 0.3s ease; }
+
+    .pill {
+      display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px;
+      padding: 6px 13px; border-radius: 999px; border: 1px solid var(--line);
+      color: var(--mute); cursor: pointer; background: var(--card); font: inherit; transition: all 0.15s ease;
+    }
+    .pill.on { background: var(--grad); color: #fff; border-color: transparent; font-weight: 600; }
+
+    .list p {
+      font-size: 13.5px; padding: 12px 0; border-bottom: 1px solid var(--line);
+      margin: 0; display: flex; justify-content: space-between; gap: 10px; align-items: center;
+    }
+    .list p:last-child { border-bottom: 0; }
+
+    .seg { display: inline-flex; background: var(--bg2); border-radius: 10px; padding: 3px; gap: 2px; }
+    .seg button {
+      font: inherit; font-size: 13px; border: 0; background: none; color: var(--mute);
+      padding: 8px 16px; border-radius: 8px; cursor: pointer; transition: all 0.15s ease;
+    }
+    .seg button.on { background: var(--card); color: var(--ink); font-weight: 600; box-shadow: var(--shadow); }
+
+    .avatar-lg {
+      width: 56px; height: 56px; border-radius: 16px; background: var(--grad);
+      color: #fff; display: grid; place-items: center; font-size: 18px; font-weight: 700;
+    }
+    .field { margin-bottom: 16px; }
+    .field label { display: block; font-size: 12.5px; color: var(--mute); margin-bottom: 6px; }
+    .field input, .field select {
+      width: 100%; font: inherit; font-size: 13.5px; padding: 10px 12px;
+      border: 1px solid var(--line); border-radius: 9px; background: var(--card); color: var(--ink);
+      outline: none; transition: border-color 0.15s ease;
+    }
+    .field input:focus, .field select:focus { border-color: var(--a1); }
+
+    .opt {
+      display: flex; gap: 10px; align-items: center; width: 100%; text-align: left;
+      font: inherit; font-size: 14px; background: var(--card); border: 1px solid var(--line);
+      border-radius: 10px; padding: 12px 14px; margin-bottom: 9px; cursor: pointer; color: var(--ink);
+      transition: all 0.15s ease;
+    }
+    .opt:hover { border-color: var(--a1); }
+    .opt b { color: var(--mute); font-weight: 700; width: 20px; }
+    .opt.right { border-color: var(--good); background: color-mix(in srgb, var(--good) 10%, var(--card)); }
+    .opt.wrong { border-color: var(--bad); background: color-mix(in srgb, var(--bad) 10%, var(--card)); }
+
+    .dz {
+      border: 1.5px dashed var(--line); border-radius: var(--r); padding: 36px 20px;
+      text-align: center; background: var(--bg2); cursor: pointer; transition: border-color 0.2s;
+    }
+    .dz:hover { border-color: var(--a1); }
+
+    .foot { border-top: 1px solid var(--line); padding: 22px 0 50px; font-size: 11.5px; color: var(--mute); }
+
+    .page-section { display: none; }
+    .page-section.active-page { display: block; }
+
+    .media-display {
+      background: #090b10;
+      border-radius: 14px;
+      height: 320px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: #a0aec0;
+      position: relative;
+      overflow: hidden;
+    }
+    .waveform-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      height: 60px;
+      width: 100%;
+      margin-bottom: 16px;
+    }
+    .wave-bar {
+      width: 4px;
+      background: var(--a1);
+      border-radius: 2px;
+      animation: pulseWave 1.2s infinite ease-in-out alternate;
+    }
+    .wave-bar:nth-child(even) { background: var(--a2); animation-delay: 0.3s; }
+    .wave-bar:nth-child(3n) { animation-delay: 0.6s; }
+    .wave-bar:nth-child(4n) { animation-delay: 0.9s; }
+    @keyframes pulseWave {
+      0% { height: 12px; opacity: 0.4; }
+      100% { height: 48px; opacity: 1; }
+    }
+    .wave-bar.paused { animation-play-state: paused !important; height: 16px; opacity: 0.5; }
+
+    @media (max-width: 960px) { .grid3, .grid4 { grid-template-columns: 1fr 1fr; } }
+    @media (max-width: 860px) {
+      .shell { grid-template-columns: 1fr; }
+      .side { position: static; height: auto; flex-direction: row; overflow-x: auto; padding: 12px; }
+      .sbrand { display: none; }
+      .sidefoot { display: none; }
+      .main { padding: 20px; }
+    }
+    @media (max-width: 600px) { .grid2, .grid3, .grid4 { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <div class="side">
+      <div class="sbrand"><span class="mark">SV</span>SVLS</div>
+      
+      <a class="navitem active" href="#overview" data-hash="overview">
+        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11.5 12 4l8 7.5"/><path d="M6 10v9a1 1 0 0 0 1 1h4v-6h2v6h4a1 1 0 0 0 1-1v-9"/></svg>
+        <span>Overview</span>
+      </a>
+
+      <a class="navitem" href="#upload" data-hash="upload">
+        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4"/><path d="M7 9l5-5 5 5"/><path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>
+        <span>Upload & Convert</span>
+      </a>
+
+      <a class="navitem" href="#concept" data-hash="concept">
+        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3"/><circle cx="5" cy="17" r="2.4"/><circle cx="19" cy="17" r="2.4"/><path d="M10.5 10 6.6 15.1M13.5 10l3.9 5.1"/></svg>
+        <span>Concept Map</span>
+      </a>
+
+      <a class="navitem" href="#scenes" data-hash="scenes">
+        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 3 8l9 5 9-5-9-5Z"/><path d="M3 13l9 5 9-5"/><path d="M3 18l9 5 9-5"/></svg>
+        <span>Explanation Scenes</span>
+      </a>
+
+      <a class="navitem" href="#voice" data-hash="voice">
+        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9H4Z"/><path d="M17 8a5 5 0 0 1 0 8M19.5 5.5a9 9 0 0 1 0 13"/></svg>
+        <span>Voice Explanation</span>
+      </a>
+
+      <a class="navitem" href="#quiz" data-hash="quiz">
+        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.9.4-1.5 1-1.5 2.2"/><path d="M12 17h.01"/></svg>
+        <span>Quiz Generator</span>
+      </a>
+
+      <a class="navitem" href="#levels" data-hash="levels">
+        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h9M17 6h3M4 12h3M9 12h11M4 18h13M19 18h1"/><circle cx="14" cy="6" r="2"/><circle cx="7" cy="12" r="2"/><circle cx="17" cy="18" r="2"/></svg>
+        <span>Explanation Levels</span>
+      </a>
+
+      <a class="navitem" href="#analytics" data-hash="analytics">
+        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M11 20V4M18 20v-7"/><path d="M3 20h18"/></svg>
+        <span>Analytics</span>
+      </a>
+
+      <a class="navitem" href="#summary" data-hash="summary">
+        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3h7l5 5v13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z"/><path d="M14 3v5h5M9 13h6M9 17h6"/></svg>
+        <span>Smart Summary</span>
+      </a>
+
+      <a class="navitem" href="#profile" data-hash="profile">
+        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.4"/><path d="M5 20c1.2-3.6 4-5.4 7-5.4s5.8 1.8 7 5.4"/></svg>
+        <span>Profile & Settings</span>
+      </a>
+
+      <div class="sidefoot">
+        <div class="userrow">
+          <span class="uav">AW</span>
+          <div>
+            <div class="uname">Abdul Wadood</div>
+            <div class="uemail">70150586</div>
+          </div>
+        </div>
+        <button class="logout" onclick="window.location.hash='#profile'">
+          <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h3M15 16l4-4-4-4M19 12H8"/></svg>
+          Log out
+        </button>
+      </div>
+    </div>
+
+    <div class="main">
+      <div class="topbar">
+        <div>
+          <div class="crumb" id="topCrumb">Dashboard</div>
+          <h1 id="topTitle">Welcome back, Abdul</h1>
+          <p class="lede" id="topLede">Here's how your learning is going.</p>
+        </div>
+        <div class="tools">
+          <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.6"/><path d="M12 3v2M12 19v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M3 12h2M19 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"/></svg>
+          <div class="toggle" id="themeToggle"><i></i></div>
+          <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8.4 8.4 0 1 1 9.5 4a6.6 6.6 0 0 0 10.5 10.5Z"/></svg>
+        </div>
+      </div>
+
+      <!-- PAGE 1: OVERVIEW -->
+      <div class="page-section active-page" id="page-overview">
+        <div class="grid4 section">
+          <div class="card stat">
+            <div class="l">Topics learned</div>
+            <div class="n">23</div>
+            <div class="d up">&#9650; 4 this week</div>
+          </div>
+          <div class="card stat">
+            <div class="l">Avg. quiz score</div>
+            <div class="n">76%</div>
+            <div class="d up">&#9650; 6% vs last month</div>
+          </div>
+          <div class="card stat">
+            <div class="l">Watch time</div>
+            <div class="n">14.2h</div>
+            <div class="d up">&#9650; 2.1h this week</div>
+          </div>
+          <div class="card stat">
+            <div class="l">Weak topics</div>
+            <div class="n">3</div>
+            <div class="d down">&#9660; needs revision</div>
+          </div>
+        </div>
+
+        <div class="grid2 section">
+          <div class="card">
+            <div class="eyebrow">Continue learning</div>
+            <div class="list">
+              <p><span><b>Paging</b> &middot; Operating Systems</span><span class="muted">Scene 3/5</span></p>
+              <p><span><b>Transport Layer</b> &middot; Computer Networks</span><span class="muted">Scene 1/6</span></p>
+              <p><span><b>Binary Trees</b> &middot; Data Structures</span><span class="muted">Not started</span></p>
+            </div>
+            <a class="btn sm" style="margin-top:14px" href="#scenes">Resume &rarr;</a>
+          </div>
+          <div class="card">
+            <div class="eyebrow">Recent activity</div>
+            <div class="list">
+              <p><span>Scored 8/10 on <b>Paging Quiz</b></span><span class="muted">2h ago</span></p>
+              <p><span>Watched <b>TLB explanation</b></span><span class="muted">Yesterday</span></p>
+              <p><span>Uploaded <b>CN_Chapter_3.pptx</b></span><span class="muted">2 days ago</span></p>
+              <p><span>Generated summary for <b>Paging</b></span><span class="muted">3 days ago</span></p>
+            </div>
+          </div>
+        </div>
+
+        <div class="card section">
+          <div class="eyebrow">This week's watch time</div>
+          <svg width="100%" height="140" viewBox="0 0 520 140">
+            <defs>
+              <linearGradient id="gbar" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#4f46e5"/>
+                <stop offset="1" stop-color="#14b8a6"/>
+              </linearGradient>
+            </defs>
+            <rect x="0.0" y="56.0" width="62.2" height="56.0" rx="5" fill="url(#gbar)"/>
+            <text x="31.1" y="132" text-anchor="middle" font-size="10" fill="var(--mute)" font-family="Inter,sans-serif">M</text>
+
+            <rect x="76.2" y="21.0" width="62.2" height="91.0" rx="5" fill="url(#gbar)"/>
+            <text x="107.4" y="132" text-anchor="middle" font-size="10" fill="var(--mute)" font-family="Inter,sans-serif">T</text>
+
+            <rect x="152.5" y="70.0" width="62.2" height="42.0" rx="5" fill="url(#gbar)"/>
+            <text x="183.7" y="132" text-anchor="middle" font-size="10" fill="var(--mute)" font-family="Inter,sans-serif">W</text>
+
+            <rect x="228.8" y="0.0" width="62.2" height="112.0" rx="5" fill="url(#gbar)"/>
+            <text x="260.0" y="132" text-anchor="middle" font-size="10" fill="var(--mute)" font-family="Inter,sans-serif">T</text>
+
+            <rect x="305.1" y="35.0" width="62.2" height="77.0" rx="5" fill="url(#gbar)"/>
+            <text x="336.2" y="132" text-anchor="middle" font-size="10" fill="var(--mute)" font-family="Inter,sans-serif">F</text>
+
+            <rect x="381.4" y="84.0" width="62.2" height="28.0" rx="5" fill="url(#gbar)"/>
+            <text x="412.5" y="132" text-anchor="middle" font-size="10" fill="var(--mute)" font-family="Inter,sans-serif">S</text>
+
+            <rect x="457.7" y="14.0" width="62.2" height="98.0" rx="5" fill="url(#gbar)"/>
+            <text x="488.8" y="132" text-anchor="middle" font-size="10" fill="var(--mute)" font-family="Inter,sans-serif">S</text>
+          </svg>
+        </div>
+      </div>
+
+      <!-- PAGE 2: UPLOAD & CONVERT -->
+      <div class="page-section" id="page-upload">
+        <div class="grid2 section">
+          <div class="dz" onclick="document.getElementById('fileInput').click()">
+            <input type="file" id="fileInput" style="display:none" onchange="handleFileUpload(this.files)">
+            <svg class="ic" style="width:32px;height:32px;color:var(--mute);margin-bottom:12px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 16V4"/><path d="M7 9l5-5 5 5"/><path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>
+            <div style="font-weight:600;font-size:15px;margin-bottom:4px">Drag & drop your file</div>
+            <div style="font-size:12px;color:var(--mute);margin-bottom:16px">PDF, PPTX, DOCX — up to 50MB</div>
+            <button class="btn sm" style="margin:0 auto" onclick="event.stopPropagation(); document.getElementById('fileInput').click()">Browse files</button>
+          </div>
+
+          <div class="card">
+            <div class="eyebrow">Choose Output</div>
+            <div class="row" style="gap:8px;margin-bottom:16px">
+              <button class="pill on" onclick="this.classList.toggle('on')">Diagram</button>
+              <button class="pill on" onclick="this.classList.toggle('on')">Animation</button>
+              <button class="pill on" onclick="this.classList.toggle('on')">Voice</button>
+              <button class="pill" onclick="this.classList.toggle('on')">Summary</button>
+            </div>
+            <div style="font-size:12px;color:var(--mute)">Pick as many as you want — each renders separately.</div>
+          </div>
+        </div>
+
+        <div class="card section">
+          <div class="eyebrow">Converting</div>
+          <div style="margin-bottom:16px">
+            <div style="display:flex;justify-content:space-between;font-size:13px;font-weight:600">
+              <span>OS_Lecture_07_Paging.pdf</span>
+              <span>100%</span>
+            </div>
+            <div class="bar"><i style="width:100%"></i></div>
+          </div>
+          <div>
+            <div style="display:flex;justify-content:space-between;font-size:13px;font-weight:600">
+              <span>CN_Chapter_3_Transport.pptx</span>
+              <span>62%</span>
+            </div>
+            <div class="bar"><i style="width:62%"></i></div>
+          </div>
+        </div>
+
+        <a class="btn" href="#concept">View concept map &rarr;</a>
+      </div>
+
+      <!-- PAGE 3: CONCEPT MAP -->
+      <div class="page-section" id="page-concept">
+        <div class="card section" style="text-align:center;padding:32px;overflow:hidden">
+          <svg width="100%" height="280" viewBox="0 0 600 280">
+            <defs>
+              <linearGradient id="centerGrad" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#4f46e5" />
+                <stop offset="100%" stop-color="#14b8a6" />
+              </linearGradient>
+            </defs>
+            <line x1="300" y1="140" x2="210" y2="60" stroke="var(--line)" stroke-width="2"/>
+            <line x1="300" y1="140" x2="390" y2="60" stroke="var(--line)" stroke-width="2"/>
+            <line x1="300" y1="140" x2="190" y2="170" stroke="var(--line)" stroke-width="2"/>
+            <line x1="300" y1="140" x2="290" y2="230" stroke="var(--line)" stroke-width="2"/>
+            <line x1="300" y1="140" x2="410" y2="170" stroke="var(--line)" stroke-width="2"/>
+
+            <circle cx="210" cy="60" r="28" fill="var(--card)" stroke="var(--a1)" stroke-width="2"/>
+            <text x="210" y="64" text-anchor="middle" font-size="11" font-weight="600" fill="var(--ink)">Page table</text>
+
+            <circle cx="390" cy="60" r="28" fill="var(--card)" stroke="var(--a2)" stroke-width="2"/>
+            <text x="390" y="64" text-anchor="middle" font-size="11" font-weight="600" fill="var(--ink)">TLB</text>
+
+            <circle cx="190" cy="170" r="28" fill="var(--card)" stroke="var(--a1)" stroke-width="2"/>
+            <text x="190" y="174" text-anchor="middle" font-size="11" font-weight="600" fill="var(--ink)">Frames</text>
+
+            <circle cx="290" cy="230" r="24" fill="var(--card)" stroke="var(--line)" stroke-width="2"/>
+            <text x="290" y="234" text-anchor="middle" font-size="11" font-weight="600" fill="var(--ink)">Faults</text>
+
+            <circle cx="410" cy="170" r="30" fill="var(--card)" stroke="var(--a2)" stroke-width="2"/>
+            <text x="410" y="167" text-anchor="middle" font-size="10" font-weight="600" fill="var(--ink)">Fragmen-</text>
+            <text x="410" y="179" text-anchor="middle" font-size="10" font-weight="600" fill="var(--ink)">tation</text>
+
+            <circle cx="300" cy="140" r="36" fill="url(#centerGrad)"/>
+            <text x="300" y="145" text-anchor="middle" font-size="13" font-weight="700" fill="#ffffff">Paging</text>
+          </svg>
+        </div>
+
+        <div class="grid2 section">
+          <div class="card">
+            <div class="eyebrow">What's connected</div>
+            <div class="list">
+              <p><span><b>Page table</b></span><span class="muted">maps pages &rarr; frames</span></p>
+              <p><span><b>TLB</b></span><span class="muted">caches recent lookups</span></p>
+            </div>
+          </div>
+          <div class="card">
+            <div class="eyebrow">Export</div>
+            <div style="font-size:13px;color:var(--mute);margin-bottom:14px">Save this map for your notes or slides.</div>
+            <div class="row" style="gap:8px">
+              <button class="btn ghost sm" onclick="showToast('Exported SVG!')">SVG</button>
+              <button class="btn ghost sm" onclick="showToast('Exported PNG!')">PNG</button>
+              <button class="btn sm" onclick="showToast('Added to notes!')">Add to notes</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PAGE 4: EXPLANATION SCENES -->
+      <div class="page-section" id="page-scenes">
+        <div class="row section" style="gap:10px;overflow-x:auto;padding-bottom:4px">
+          <button class="card pad-sm pill-card" onclick="selectScene(1, this)" style="flex:1;min-width:130px;text-align:center;border:1px solid var(--line)">
+            <div style="width:24px;height:24px;border-radius:50%;background:var(--a1);color:#fff;margin:0 auto 6px;font-size:11px;font-weight:700;display:grid;place-items:center">1</div>
+            <div style="font-size:12px;font-weight:600">Split the address</div>
+          </button>
+          <button class="card pad-sm pill-card" onclick="selectScene(2, this)" style="flex:1;min-width:130px;text-align:center;border:1px solid var(--line)">
+            <div style="width:24px;height:24px;border-radius:50%;background:var(--a1);color:#fff;margin:0 auto 6px;font-size:11px;font-weight:700;display:grid;place-items:center">3</div>
+            <div style="font-size:12px;font-weight:600">Look it up</div>
+          </button>
+          <button class="card pad-sm pill-card" onclick="selectScene(3, this)" style="flex:1;min-width:130px;text-align:center;border:1px solid var(--a1)">
+            <div style="width:24px;height:24px;border-radius:50%;background:var(--a1);color:#fff;margin:0 auto 6px;font-size:11px;font-weight:700;display:grid;place-items:center">3</div>
+            <div style="font-size:12px;font-weight:600">Recombine it</div>
+          </button>
+          <button class="card pad-sm pill-card" onclick="selectScene(4, this)" style="flex:1;min-width:130px;text-align:center;border:1px solid var(--line)">
+            <div style="width:24px;height:24px;border-radius:50%;background:var(--bg2);color:var(--mute);margin:0 auto 6px;font-size:11px;font-weight:700;display:grid;place-items:center">4</div>
+            <div style="font-size:12px;font-weight:600">Worked example</div>
+          </button>
+          <button class="card pad-sm pill-card" onclick="selectScene(5, this)" style="flex:1;min-width:130px;text-align:center;border:1px solid var(--line)">
+            <div style="width:24px;height:24px;border-radius:50%;background:var(--bg2);color:var(--mute);margin:0 auto 6px;font-size:11px;font-weight:700;display:grid;place-items:center">5</div>
+            <div style="font-size:12px;font-weight:600">Common mistake</div>
+          </button>
+        </div>
+
+        <div class="card section media-display">
+          <svg class="ic" style="width:36px;height:36px;color:var(--a1);margin-bottom:10px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          <div style="font-size:13px;font-weight:600;color:#e2e8f0" id="sceneTitle">scene 3 &middot; frame 9 resolving</div>
+          <div style="font-size:11px;color:#718096;margin-top:4px">1920x1080 &middot; rendered with Manim</div>
+        </div>
+
+        <div class="row section" style="align-items:center;justify-content:space-between">
+          <div class="row" style="gap:8px">
+            <button class="btn sm" id="playBtn" onclick="togglePlay()">|| Pause</button>
+            <button class="btn ghost sm" onclick="replayScene()">Replay scene</button>
+          </div>
+          <div style="font-size:12.5px;color:var(--mute);font-weight:600" id="sceneTimer">01:04 / 02:23</div>
+        </div>
+
+        <div class="card section">
+          <div class="eyebrow">Now explaining</div>
+          <div style="font-size:14px" id="sceneExplanation">
+            The page number is used to look up the table. Only that half of the address changes — the offset carries straight through.
+          </div>
+        </div>
+      </div>
+
+      <!-- PAGE 5: VOICE EXPLANATION -->
+      <div class="page-section" id="page-voice">
+        <div class="card section media-display" style="height:220px">
+          <div class="waveform-container" id="waveform">
+            <div class="wave-bar" style="height:20px"></div>
+            <div class="wave-bar" style="height:35px"></div>
+            <div class="wave-bar" style="height:50px"></div>
+            <div class="wave-bar" style="height:28px"></div>
+            <div class="wave-bar" style="height:44px"></div>
+            <div class="wave-bar" style="height:58px"></div>
+            <div class="wave-bar" style="height:30px"></div>
+            <div class="wave-bar" style="height:20px"></div>
+            <div class="wave-bar" style="height:40px"></div>
+            <div class="wave-bar" style="height:52px"></div>
+            <div class="wave-bar" style="height:25px"></div>
+            <div class="wave-bar" style="height:35px"></div>
+          </div>
+          <div class="row" style="gap:10px;margin-bottom:12px">
+            <button class="btn sm" id="voicePauseBtn" onclick="toggleVoiceAudio()">|| Pause</button>
+            <button class="btn ghost sm" onclick="showToast('Listening to question...')">Ask a question</button>
+          </div>
+          <div style="font-size:12px;color:var(--mute)" id="voiceTimer">00:18 / 00:41</div>
+        </div>
+
+        <div class="grid2 section">
+          <div class="card">
+            <div class="eyebrow">Transcript</div>
+            <div class="list">
+              <p><span>The page number is used to look up the table.</span></p>
+              <p><span>Entry three points to frame nine.</span></p>
+              <p><span>The offset carries over untouched.</span></p>
+            </div>
+          </div>
+          <div class="card">
+            <div class="eyebrow">Voice & Speed</div>
+            <div class="field">
+              <label>Voice</label>
+              <select>
+                <option>English — neutral</option>
+                <option>English — expressive</option>
+                <option>Urdu — natural</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Speed &mdash; <span id="speedVal">0.9x</span></label>
+              <input type="range" min="0.5" max="2.0" step="0.1" value="0.9" oninput="document.getElementById('speedVal').innerText = this.value + 'x'">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PAGE 6: QUIZ GENERATOR -->
+      <div class="page-section" id="page-quiz">
+        <div class="grid2 section" style="grid-template-columns: 1.4fr 1fr;">
+          <div>
+            <div class="bar" style="margin-bottom:20px"><i style="width:33%"></i></div>
+            <div class="card section">
+              <div style="font-size:15px;font-weight:600;margin-bottom:18px">
+                Address 0x1F4C, 4KB pages. What reaches memory unchanged?
+              </div>
+              <div id="quizOptions">
+                <button class="opt" onclick="checkQuiz(this, false)"><b>A</b> The page number</button>
+                <button class="opt" onclick="checkQuiz(this, true)"><b>B</b> The offset</button>
+                <button class="opt" onclick="checkQuiz(this, false)"><b>C</b> Neither</button>
+                <button class="opt" onclick="checkQuiz(this, false)"><b>D</b> Both</button>
+              </div>
+              <button class="btn sm" style="margin-top:10px" onclick="showToast('Question submitted!')">Next question &rarr;</button>
+            </div>
+          </div>
+
+          <div>
+            <div class="card section">
+              <div class="eyebrow">Past quiz scores</div>
+              <svg width="100%" height="100" viewBox="0 0 200 80">
+                <rect x="10" y="30" width="20" height="40" rx="3" fill="url(#gbar)"/>
+                <rect x="38" y="20" width="20" height="50" rx="3" fill="url(#gbar)"/>
+                <rect x="66" y="35" width="20" height="35" rx="3" fill="url(#gbar)"/>
+                <rect x="94" y="15" width="20" height="55" rx="3" fill="url(#gbar)"/>
+                <rect x="122" y="25" width="20" height="45" rx="3" fill="url(#gbar)"/>
+                <rect x="150" y="5" width="20" height="65" rx="3" fill="url(#gbar)"/>
+                <rect x="178" y="18" width="20" height="52" rx="3" fill="url(#gbar)"/>
+              </svg>
+            </div>
+            <div class="card">
+              <div class="eyebrow">This quiz</div>
+              <div style="font-size:13px;color:var(--mute)">
+                6 recall &middot; 3 applied &middot; 1 trap question, tagged to scene 5.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PAGE 7: EXPLANATION LEVELS -->
+      <div class="page-section" id="page-levels">
+        <div class="section">
+          <div class="seg">
+            <button class="on" onclick="setLevel('beginner', this)">Beginner</button>
+            <button onclick="setLevel('intermediate', this)">Intermediate</button>
+            <button onclick="setLevel('advanced', this)">Advanced</button>
+          </div>
+        </div>
+
+        <div class="card section" style="padding:28px">
+          <div style="font-size:16px;font-weight:500;line-height:1.6" id="levelCardText">
+            "Think of memory as boxes on a shelf. Your program asks for box 3 — a notebook says it's actually box 9."
+          </div>
+        </div>
+
+        <div class="grid3 section">
+          <div class="card pad-sm">
+            <div class="eyebrow">Length</div>
+            <div style="font-weight:600" id="lvlLength">~90 seconds</div>
+          </div>
+          <div class="card pad-sm">
+            <div class="eyebrow">Notation</div>
+            <div style="font-weight:600" id="lvlNotation">None</div>
+          </div>
+          <div class="card pad-sm">
+            <div class="eyebrow">Fit</div>
+            <div style="font-weight:600">Matches your level</div>
+          </div>
+        </div>
+
+        <a class="btn" href="#scenes">Play this version &rarr;</a>
+      </div>
+
+      <!-- PAGE 8: ANALYTICS -->
+      <div class="page-section" id="page-analytics">
+        <div class="grid3 section">
+          <div class="card pad-sm" style="text-align:center">
+            <div class="eyebrow">Overall Watched</div>
+            <svg width="100" height="100" viewBox="0 0 36 36" style="margin:10px auto;display:block">
+              <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="var(--bg2)" stroke-width="3.8" />
+              <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="url(#gbar)" stroke-width="3.8" stroke-dasharray="78, 100" />
+              <text x="18" y="20.5" text-anchor="middle" font-size="9" font-weight="700" fill="var(--ink)">78%</text>
+            </svg>
+          </div>
+
+          <div class="card pad-sm">
+            <div class="eyebrow">Quiz Score Trend</div>
+            <svg width="100%" height="80" viewBox="0 0 150 60" style="margin-top:15px">
+              <path d="M 0 40 Q 30 35, 60 38 T 120 20 T 150 10" fill="none" stroke="url(#gbar)" stroke-width="3"/>
+            </svg>
+          </div>
+
+          <div class="card pad-sm">
+            <div class="eyebrow">Weekly Watch Time</div>
+            <svg width="100%" height="80" viewBox="0 0 140 60" style="margin-top:15px">
+              <rect x="5" y="30" width="12" height="25" rx="2" fill="url(#gbar)"/>
+              <rect x="25" y="15" width="12" height="40" rx="2" fill="url(#gbar)"/>
+              <rect x="45" y="35" width="12" height="20" rx="2" fill="url(#gbar)"/>
+              <rect x="65" y="5" width="12" height="50" rx="2" fill="url(#gbar)"/>
+              <rect x="85" y="20" width="12" height="35" rx="2" fill="url(#gbar)"/>
+              <rect x="105" y="40" width="12" height="15" rx="2" fill="url(#gbar)"/>
+            </svg>
+          </div>
+        </div>
+
+        <div class="grid2 section">
+          <div class="card">
+            <div class="eyebrow">Weak Topics</div>
+            <div class="list">
+              <p><span>Page fault handling</span><span class="muted" style="color:var(--bad);font-weight:600">34%</span></p>
+              <p><span>TLB hit ratio maths</span><span class="muted" style="color:var(--warn);font-weight:600">41%</span></p>
+              <p><span>Multi-level page tables</span><span class="muted" style="color:var(--warn);font-weight:600">52%</span></p>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="eyebrow">Suggested Next</div>
+            <div style="font-size:13.5px;margin-bottom:16px">
+              Re-watch <b>page fault handling</b> at beginner level &mdash; missed twice at medium.
+            </div>
+            <a class="btn sm" href="#levels">4-minute revision &rarr;</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- PAGE 9: SMART SUMMARY -->
+      <div class="page-section" id="page-summary">
+        <div class="section">
+          <div class="seg">
+            <button onclick="setSummaryLength('5lines', this)">5 lines</button>
+            <button class="on" onclick="setSummaryLength('1page', this)">1 page</button>
+            <button onclick="setSummaryLength('full', this)">Full notes</button>
+          </div>
+        </div>
+
+        <div class="card section" style="padding:24px">
+          <div class="eyebrow">Paging, In Short</div>
+          <div style="font-size:13.5px;line-height:1.7" id="summaryContent">
+            <p style="margin:0 0 10px">Memory is cut into equal boxes called frames. A process's pages fit into any free frame &mdash; they don't need to sit together.</p>
+            <p style="margin:0 0 10px">An address splits into a page number (looked up) and an offset (carried over unchanged).</p>
+            <p style="margin:0 0 10px">Page size = frame size, so the offset transfers directly.</p>
+            <p style="margin:0 0 10px">TLB caches recent lookups to skip the table walk.</p>
+            <p style="margin:0">A page fault costs a disk access.</p>
+          </div>
+        </div>
+
+        <div class="row section" style="gap:10px">
+          <button class="btn" onclick="showToast('Downloading PDF...')">Download PDF</button>
+          <button class="btn ghost" onclick="showToast('Generated 12 flashcards!')">Make 12 flashcards</button>
+        </div>
+      </div>
+
+      <!-- PAGE 10: PROFILE & SETTINGS -->
+      <div class="page-section" id="page-profile">
+        <div class="card section">
+          <div class="row" style="gap:16px;align-items:center;margin-bottom:20px">
+            <div class="avatar-lg">AW</div>
+            <div>
+              <div style="font-size:18px;font-weight:700">Abdul Wadood</div>
+              <div style="font-size:12px;color:var(--mute)">University ID: 70150586</div>
+            </div>
+          </div>
+
+          <div class="grid2">
+            <div class="field">
+              <label>Full Name</label>
+              <input type="text" value="Abdul Wadood">
+            </div>
+            <div class="field">
+              <label>University ID</label>
+              <input type="text" value="70150586" readonly style="opacity:0.7">
+            </div>
+            <div class="field">
+              <label>Email Address</label>
+              <input type="email" value="70150586@student.uol.edu.pk">
+            </div>
+            <div class="field">
+              <label>Department / Campus</label>
+              <input type="text" value="Computer Science · The University of Lahore">
+            </div>
+          </div>
+
+          <button class="btn sm" onclick="showToast('Profile updated!')" style="margin-top:10px">Save Changes</button>
+        </div>
+      </div>
+
+      <div class="foot">
+        SVLS &middot; Smart Visualize Learning System &middot; FYP, The University of Lahore
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const pageMeta = {
+      'overview': {
+        crumb: 'Dashboard',
+        title: 'Welcome back, Abdul',
+        lede: "Here's how your learning is going."
+      },
+      'upload': {
+        crumb: 'UPLOAD & CONVERT',
+        title: 'Turn a file into a lesson',
+        lede: 'Drop a PDF or slide deck and pick what you want generated.'
+      },
+      'concept': {
+        crumb: 'CONCEPT VISUALIZATION',
+        title: 'How the ideas connect',
+        lede: 'AI-generated from your uploaded material.'
+      },
+      'scenes': {
+        crumb: 'EXPLANATION SCENES',
+        title: 'Broken into stages, not one long clip',
+        lede: 'Every concept becomes a short sequence you can scrub through.'
+      },
+      'voice': {
+        crumb: 'AI VOICE EXPLANATION',
+        title: 'Narrated, and interruptible',
+        lede: 'Ask a question mid-explanation; it answers, then resumes.'
+      },
+      'quiz': {
+        crumb: 'QUIZ GENERATOR',
+        title: 'Built from the scenes you watched',
+        lede: 'Wrong answers route you back to the exact scene that explains them.'
+      },
+      'levels': {
+        crumb: 'EXPLANATION LEVELS',
+        title: 'One topic, three depths',
+        lede: 'Switch any time — the visuals stay, the wording changes.'
+      },
+      'analytics': {
+        crumb: 'LEARNING ANALYTICS',
+        title: 'Where your time is going',
+        lede: 'Watched percentage and quiz score, read together.'
+      },
+      'summary': {
+        crumb: 'SMART SUMMARY GENERATOR',
+        title: 'The page you revise from',
+        lede: 'Condensed from the full lecture, sourced back to scenes.'
+      },
+      'profile': {
+        crumb: 'USER PROFILE',
+        title: 'Manage your account',
+        lede: 'Update profile details and learning preferences.'
+      }
+    };
+
+    function renderPageFromHash() {
+      let hash = window.location.hash.replace('#', '') || 'overview';
+      if (!pageMeta[hash]) hash = 'overview';
+
+      document.querySelectorAll('.navitem').forEach(item => {
+        if (item.getAttribute('data-hash') === hash) {
+          item.classList.add('active');
+        } else {
+          item.classList.remove('active');
+        }
+      });
+
+      document.querySelectorAll('.page-section').forEach(sec => {
+        sec.classList.remove('active-page');
+      });
+      const targetSec = document.getElementById('page-' + hash);
+      if (targetSec) targetSec.classList.add('active-page');
+
+      const meta = pageMeta[hash];
+      document.getElementById('topCrumb').innerText = meta.crumb;
+      document.getElementById('topTitle').innerText = meta.title;
+      document.getElementById('topLede').innerText = meta.lede;
+
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    window.addEventListener('hashchange', renderPageFromHash);
+    window.addEventListener('load', renderPageFromHash);
+
+    (function(){
+      var t = document.getElementById('themeToggle');
+      var root = document.documentElement;
+      try {
+        var saved = localStorage.getItem('svls-theme');
+        if(saved === 'dark') {
+          root.setAttribute('data-theme', 'dark');
+          t && t.classList.add('on');
+        }
+      } catch(e){}
+
+      if(t){
+        t.addEventListener('click', function(){
+          var dark = root.getAttribute('data-theme') === 'dark';
+          if(dark) {
+            root.removeAttribute('data-theme');
+            t.classList.remove('on');
+          } else {
+            root.setAttribute('data-theme', 'dark');
+            t.classList.add('on');
+          }
+          try {
+            localStorage.setItem('svls-theme', root.getAttribute('data-theme') || 'light');
+          } catch(e){}
+        });
+      }
+    })();
+
+    function showToast(msg) {
+      const banner = document.createElement('div');
+      banner.style.cssText = 'position:fixed;bottom:20px;right:20px;background:var(--grad);color:#fff;padding:10px 18px;border-radius:10px;font-size:13px;font-weight:600;box-shadow:var(--shadow);z-index:999;transition:opacity 0.3s;';
+      banner.innerText = msg;
+      document.body.appendChild(banner);
+      setTimeout(() => {
+        banner.style.opacity = '0';
+        setTimeout(() => banner.remove(), 300);
+      }, 2000);
+    }
+
+    function checkQuiz(button, isCorrect) {
+      const parent = document.getElementById('quizOptions');
+      const buttons = parent.querySelectorAll('.opt');
+      buttons.forEach(btn => btn.className = 'opt');
+
+      if(isCorrect) {
+        button.classList.add('right');
+        showToast('Correct answer!');
+      } else {
+        button.classList.add('wrong');
+        showToast('Incorrect. Route to Scene 5 to review.');
+      }
+    }
+
+    const levelTexts = {
+      beginner: {
+        text: '"Think of memory as boxes on a shelf. Your program asks for box 3 — a notebook says it\'s actually box 9."',
+        len: '~90 seconds',
+        notation: 'None'
+      },
+      intermediate: {
+        text: '"Paging breaks virtual memory into fixed 4KB blocks mapped to physical frames via an OS Page Table array structure."',
+        len: '~2.5 minutes',
+        notation: 'Basic Math'
+      },
+      advanced: {
+        text: '"Hardware MMU walks multi-level radix page trees, translating virtual VPN offset bits to physical PFN mappings with TLB hit optimization."',
+        len: '~4.0 minutes',
+        notation: 'Hexadecimal & Hardware'
+      }
+    };
+
+    function setLevel(lvl, btn) {
+      const parent = btn.parentElement;
+      parent.querySelectorAll('button').forEach(b => b.classList.remove('on'));
+      btn.classList.add('on');
+
+      const data = levelTexts[lvl];
+      document.getElementById('levelCardText').innerText = data.text;
+      document.getElementById('lvlLength').innerText = data.len;
+      document.getElementById('lvlNotation').innerText = data.notation;
+    }
+
+    const sceneExplanations = {
+      1: "Step 1: The CPU generates a virtual memory address containing a Page Number (VPN) and an Offset.",
+      2: "Step 2: The MMU queries the page table using the page number to locate the corresponding physical frame number.",
+      3: "The page number is used to look up the table. Only that half of the address changes — the offset carries straight through.",
+      4: "Step 4: Worked Example — Translating address 0x1F4C with 4KB page bounds.",
+      5: "Step 5: Common Mistake — Modifying offset bits during address translation causes memory corruption."
+    };
+
+    function selectScene(num, card) {
+      document.querySelectorAll('.pill-card').forEach(c => {
+        c.style.borderColor = 'var(--line)';
+      });
+      card.style.borderColor = 'var(--a1)';
+      document.getElementById('sceneTitle').innerText = `scene ${num} · frame 9 resolving`;
+      document.getElementById('sceneExplanation').innerText = sceneExplanations[num];
+    }
+
+    let isPlaying = true;
+    function togglePlay() {
+      isPlaying = !isPlaying;
+      document.getElementById('playBtn').innerText = isPlaying ? '|| Pause' : '▶ Play';
+    }
+
+    function replayScene() {
+      isPlaying = true;
+      document.getElementById('playBtn').innerText = '|| Pause';
+      document.getElementById('sceneTimer').innerText = '00:00 / 02:23';
+    }
+
+    let isVoicePlaying = true;
+    function toggleVoiceAudio() {
+      isVoicePlaying = !isVoicePlaying;
+      document.getElementById('voicePauseBtn').innerText = isVoicePlaying ? '|| Pause' : '▶ Play';
+      const bars = document.querySelectorAll('#waveform .wave-bar');
+      bars.forEach(b => {
+        if(isVoicePlaying) b.classList.remove('paused');
+        else b.classList.add('paused');
+      });
+    }
+
+    const summaryTexts = {
+      '5lines': `<p style="margin:0 0 10px">• Memory is cut into equal boxes called frames.</p>
+                 <p style="margin:0 0 10px">• Address splits into page number and offset.</p>
+                 <p style="margin:0 0 10px">• Page size equals frame size.</p>
+                 <p style="margin:0 0 10px">• TLB caches recent lookups.</p>
+                 <p style="margin:0">• Page faults require disk access.</p>`,
+      '1page': `<p style="margin:0 0 10px">Memory is cut into equal boxes called frames. A process's pages fit into any free frame — they don't need to sit together.</p>
+                <p style="margin:0 0 10px">An address splits into a page number (looked up) and an offset (carried over unchanged).</p>
+                <p style="margin:0 0 10px">Page size = frame size, so the offset transfers directly.</p>
+                <p style="margin:0 0 10px">TLB caches recent lookups to skip the table walk.</p>
+                <p style="margin:0">A page fault costs a disk access.</p>`,
+      'full': `<p style="margin:0 0 10px"><b>Full Notes — Paging & Virtual Memory Systems:</b></p>
+               <p style="margin:0 0 10px">1. Paging allows physical address spaces of processes to be noncontiguous. It avoids external fragmentation and the need for compaction.</p>
+               <p style="margin:0 0 10px">2. Physical memory is divided into fixed-sized blocks called <i>frames</i>. Logical memory is divided into blocks of the same size called <i>pages</i>.</p>
+               <p style="margin:0 0 10px">3. The Translation Lookaside Buffer (TLB) acts as a high-speed hardware associative cache for page table entries.</p>
+               <p style="margin:0">4. Page faults trigger hardware interrupts, causing the OS kernel to page in missing frames from backstore swap spaces.</p>`
+    };
+
+    function setSummaryLength(mode, btn) {
+      btn.parentElement.querySelectorAll('button').forEach(b => b.classList.remove('on'));
+      btn.classList.add('on');
+      document.getElementById('summaryContent').innerHTML = summaryTexts[mode];
+    }
+
+    function handleFileUpload(files) {
+      if(files.length > 0) {
+        showToast('File "' + files[0].name + '" uploaded successfully!');
+      }
+    }
+  </script>
+</body>
+</html>
